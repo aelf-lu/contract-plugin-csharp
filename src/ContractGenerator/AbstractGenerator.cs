@@ -65,7 +65,7 @@ public abstract class AbstractGenerator : IndentPrinter
         Indent();
         action();
         Outdent();
-        _("};");
+        _("},");
     }
 
     protected void Indented(Action a)

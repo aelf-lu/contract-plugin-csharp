@@ -20,8 +20,20 @@ public partial class Generator
         InBlock(() =>
         {
             foreach (var method in FullMethods)
+            {
+#if VIRTUAL_METHOD
+                _(
+                    $"public virtual {GetMethodReturnTypeServer(method)} {method.Name}({GetMethodRequestParamServer(method)}{GetMethodResponseStreamMaybe(method)})");
+                _("{");
+                Indent();
+                _("throw new global::System.NotImplementedException();");
+                Outdent();
+                _("}");
+#else
                 _(
                     $"public abstract {GetMethodReturnTypeServer(method)} {method.Name}({GetMethodRequestParamServer(method)}{GetMethodResponseStreamMaybe(method)});");
+#endif
+            }
         });
     }
 
@@ -34,13 +46,16 @@ public partial class Generator
             DoubleIndented(() =>
             {
                 _(".AddDescriptors(Descriptors)");
-                foreach (var method in FullMethods.SkipLast(1))
+                if (FullMethods.Any())
                 {
-                    _($".AddMethod({GetMethodFieldName(method)}, serviceImpl.{method.Name})");
-                }
+                    foreach (var method in FullMethods.SkipLast(1))
+                    {
+                        _($".AddMethod({GetMethodFieldName(method)}, serviceImpl.{method.Name})");
+                    }
 
-                var lastMethod = FullMethods.Last();
-                _($".AddMethod({GetMethodFieldName(lastMethod)}, serviceImpl.{lastMethod.Name}).Build();");
+                    var lastMethod = FullMethods.Last();
+                    _($".AddMethod({GetMethodFieldName(lastMethod)}, serviceImpl.{lastMethod.Name}).Build();");
+                }
             });
         });
         ___EmptyLine___();
@@ -50,6 +65,11 @@ public partial class Generator
 
     private string GetStateTypeName()
     {
+        // If there has no option (aelf.csharp_state) = "XXX" in proto files, state name will return empty string. Such as base proto.
+        if (_serviceDescriptor.GetOptions() == null)
+        {
+            return "";
+        }
         return _serviceDescriptor.GetOptions().GetExtension(OptionsExtensions.CsharpState);
     }
 

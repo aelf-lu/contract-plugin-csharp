@@ -12,6 +12,11 @@ public static class FilePrimitives
 
     public static string GetNamespace(this FileDescriptor fileDescriptor)
     {
+        // If there has no option csharp_namespace = "XXX" in proto files, state name will return empty string. Such as message proto.
+        if (fileDescriptor.GetOptions() == null)
+        {
+            return "";
+        }
         return fileDescriptor.GetOptions().HasCsharpNamespace
             ? fileDescriptor.GetOptions().CsharpNamespace
             : fileDescriptor.Package.UnderscoresToCamelCase(true, true);
